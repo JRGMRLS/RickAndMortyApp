@@ -25,21 +25,29 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.example.rickandmortyapp.Character
+import com.example.rickandmortyapp.screens.components.ErrorScreen
+import com.example.rickandmortyapp.screens.components.LoadingScreen
+import com.example.rickandmortyapp.viewmodels.CharactersViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharactersScreen(
-    characters: List<Character>,
-    onCharacterClick: (Int) -> Unit
+    onCharacterClick: (Int) -> Unit,
+    charactersViewModel: CharactersViewModel = viewModel()
 ) {
+    val uiState by charactersViewModel.uiState.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -53,28 +61,53 @@ fun CharactersScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(
-                horizontal = 12.dp,
-                vertical = 10.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(innerPadding)
         ) {
-            items(
-                items = characters,
-                key = { character ->
-                    character.id
+            when {
+                uiState.hasError -> {
+                    ErrorScreen(
+                        message = "Error al obtener listado de personajes.\nIntenta de nuevo",
+                        onRetryClick = {
+                            charactersViewModel.loadCharacters()
+                        }
+                    )
                 }
-            ) { character ->
-                CharacterItem(
-                    character = character,
-                    onClick = {
-                        onCharacterClick(character.id)
+
+                uiState.isLoading -> {
+                    LoadingScreen(
+                        onLoadingClick = {
+                            charactersViewModel.showError()
+                        }
+                    )
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            horizontal = 12.dp,
+                            vertical = 10.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(
+                            items = uiState.data,
+                            key = { character ->
+                                character.id
+                            }
+                        ) { character ->
+                            CharacterItem(
+                                character = character,
+                                onClick = {
+                                    onCharacterClick(character.id)
+                                }
+                            )
+                        }
                     }
-                )
+                }
             }
         }
     }

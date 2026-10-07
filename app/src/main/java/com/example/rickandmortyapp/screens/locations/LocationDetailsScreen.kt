@@ -1,5 +1,6 @@
 package com.example.rickandmortyapp.screens.locations
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,19 +20,27 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rickandmortyapp.Location
+import com.example.rickandmortyapp.screens.components.ErrorScreen
+import com.example.rickandmortyapp.screens.components.LoadingScreen
+import com.example.rickandmortyapp.viewmodels.LocationDetailsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationDetailsScreen(
-    location: Location,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    locationDetailsViewModel: LocationDetailsViewModel = viewModel()
 ) {
+    val uiState by locationDetailsViewModel.uiState.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -56,48 +65,83 @@ fun LocationDetailsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 28.dp, vertical = 30.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = location.name,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
+            when {
+                uiState.hasError -> {
+                    ErrorScreen(
+                        message = "Error al obtener la ubicación.\nIntenta de nuevo",
+                        onRetryClick = {
+                            locationDetailsViewModel.loadLocation()
+                        }
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                uiState.isLoading -> {
+                    LoadingScreen(
+                        onLoadingClick = {
+                            locationDetailsViewModel.showError()
+                        }
+                    )
+                }
 
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            LocationInformationRow(
-                label = "ID:",
-                value = location.id.toString()
-            )
-
-            LocationInformationRow(
-                label = "Name:",
-                value = location.name
-            )
-
-            LocationInformationRow(
-                label = "Type:",
-                value = location.type
-            )
-
-            LocationInformationRow(
-                label = "Dimension:",
-                value = location.dimension
-            )
+                uiState.data != null -> {
+                    LocationDetailsContent(
+                        location = uiState.data!!
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun LocationDetailsContent(
+    location: Location
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 28.dp, vertical = 30.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = location.name,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        LocationInformationRow(
+            label = "ID:",
+            value = location.id.toString()
+        )
+
+        LocationInformationRow(
+            label = "Name:",
+            value = location.name
+        )
+
+        LocationInformationRow(
+            label = "Type:",
+            value = location.type
+        )
+
+        LocationInformationRow(
+            label = "Dimension:",
+            value = location.dimension
+        )
     }
 }
 

@@ -1,5 +1,6 @@
 package com.example.rickandmortyapp.screens.characters
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,20 +31,26 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.example.rickandmortyapp.Character
+import com.example.rickandmortyapp.screens.components.ErrorScreen
+import com.example.rickandmortyapp.screens.components.LoadingScreen
+import com.example.rickandmortyapp.viewmodels.CharacterDetailsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterDetailsScreen(
-    character: Character,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    characterDetailsViewModel: CharacterDetailsViewModel = viewModel()
 ) {
+    val uiState by characterDetailsViewModel.uiState.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = "Characters details")
+                    Text(text = "Character details")
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -61,54 +70,89 @@ fun CharacterDetailsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 28.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AsyncImage(
-                model = character.image,
-                contentDescription = "Imagen de ${character.name}",
-                modifier = Modifier
-                    .size(220.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
+            when {
+                uiState.hasError -> {
+                    ErrorScreen(
+                        message = "Error al obtener el personaje.\nIntenta de nuevo",
+                        onRetryClick = {
+                            characterDetailsViewModel.loadCharacter()
+                        }
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                uiState.isLoading -> {
+                    LoadingScreen(
+                        onLoadingClick = {
+                            characterDetailsViewModel.showError()
+                        }
+                    )
+                }
 
-            Text(
-                text = character.name,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(22.dp))
-
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            CharacterInformationRow(
-                label = "Species:",
-                value = character.species
-            )
-
-            CharacterInformationRow(
-                label = "Status:",
-                value = character.status
-            )
-
-            CharacterInformationRow(
-                label = "Gender:",
-                value = character.gender
-            )
+                uiState.data != null -> {
+                    CharacterDetailsContent(
+                        character = uiState.data!!
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun CharacterDetailsContent(
+    character: Character
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 28.dp, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AsyncImage(
+            model = character.image,
+            contentDescription = "Imagen de ${character.name}",
+            modifier = Modifier
+                .size(220.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = character.name,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(22.dp))
+
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        CharacterInformationRow(
+            label = "Species:",
+            value = character.species
+        )
+
+        CharacterInformationRow(
+            label = "Status:",
+            value = character.status
+        )
+
+        CharacterInformationRow(
+            label = "Gender:",
+            value = character.gender
+        )
     }
 }
 

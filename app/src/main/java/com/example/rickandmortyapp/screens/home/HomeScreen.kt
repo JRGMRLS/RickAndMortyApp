@@ -12,7 +12,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -20,8 +19,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.rickandmortyapp.CharacterDb
-import com.example.rickandmortyapp.LocationDb
 import com.example.rickandmortyapp.navigation.CharacterDetailsDestination
 import com.example.rickandmortyapp.navigation.CharactersDestination
 import com.example.rickandmortyapp.navigation.CharactersGraph
@@ -38,8 +35,6 @@ fun HomeScreen(
     onLogoutClick: () -> Unit
 ) {
     val navController = rememberNavController()
-    val characterDb = remember { CharacterDb() }
-    val locationDb = remember { LocationDb() }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
@@ -147,13 +142,11 @@ fun HomeScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
             charactersNavigation(
-                navController = navController,
-                characterDb = characterDb
+                navController = navController
             )
 
             locationsNavigation(
-                navController = navController,
-                locationDb = locationDb
+                navController = navController
             )
 
             composable<ProfileDestination> {

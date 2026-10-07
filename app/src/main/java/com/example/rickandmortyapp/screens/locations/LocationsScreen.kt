@@ -2,8 +2,8 @@ package com.example.rickandmortyapp.screens.locations
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,17 +21,25 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rickandmortyapp.Location
+import com.example.rickandmortyapp.screens.components.ErrorScreen
+import com.example.rickandmortyapp.screens.components.LoadingScreen
+import com.example.rickandmortyapp.viewmodels.LocationsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationsScreen(
-    locations: List<Location>,
-    onLocationClick: (Int) -> Unit
+    onLocationClick: (Int) -> Unit,
+    locationsViewModel: LocationsViewModel = viewModel()
 ) {
+    val uiState by locationsViewModel.uiState.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -45,35 +53,60 @@ fun LocationsScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(
-                horizontal = 12.dp,
-                vertical = 10.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(innerPadding)
         ) {
-            items(
-                items = locations,
-                key = { location ->
-                    location.id
+            when {
+                uiState.hasError -> {
+                    ErrorScreen(
+                        message = "Error al obtener listado de ubicaciones.\nIntenta de nuevo",
+                        onRetryClick = {
+                            locationsViewModel.loadLocations()
+                        }
+                    )
                 }
-            ) { location ->
-                LocationItem(
-                    location = location,
-                    onClick = {
-                        onLocationClick(location.id)
+
+                uiState.isLoading -> {
+                    LoadingScreen(
+                        onLoadingClick = {
+                            locationsViewModel.showError()
+                        }
+                    )
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            horizontal = 12.dp,
+                            vertical = 10.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(
+                            items = uiState.data,
+                            key = { location ->
+                                location.id
+                            }
+                        ) { location ->
+                            LocationItem(
+                                location = location,
+                                onClick = {
+                                    onLocationClick(location.id)
+                                }
+                            )
+                        }
                     }
-                )
+                }
             }
         }
     }
 }
 
 @Composable
-fun LocationItem(
+private fun LocationItem(
     location: Location,
     onClick: () -> Unit
 ) {
