@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -20,17 +21,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rickandmortyapp.viewmodels.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    profileViewModel: ProfileViewModel = viewModel()
 ) {
+    val uiState by profileViewModel.uiState.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -61,20 +69,28 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            ProfileInformationRow(
-                label = "Nombre:",
-                value = "Jorge Andres Morales Solorzano"
-            )
+            if (uiState.isLoading) {
+                CircularProgressIndicator()
+            } else {
+                ProfileInformationRow(
+                    label = "Nombre:",
+                    value = uiState.name
+                )
 
-            ProfileInformationRow(
-                label = "Carné:",
-                value = "24284"
-            )
+                ProfileInformationRow(
+                    label = "Carné:",
+                    value = "24284"
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = onLogoutClick,
+                onClick = {
+                    profileViewModel.logout(
+                        onSuccess = onLogoutClick
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(0.65f)
             ) {
                 Text(text = "Cerrar sesión")

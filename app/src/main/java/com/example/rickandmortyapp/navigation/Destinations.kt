@@ -3,6 +3,9 @@ package com.example.rickandmortyapp.navigation
 import kotlinx.serialization.Serializable
 
 @Serializable
+data object SessionDestination
+
+@Serializable
 data object LoginDestination
 
 @Serializable

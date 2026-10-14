@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.rickandmortyapp.screens.home.HomeScreen
 import com.example.rickandmortyapp.screens.login.LoginScreen
+import com.example.rickandmortyapp.screens.session.SessionScreen
 
 @Composable
 fun AppNavigation() {
@@ -13,8 +14,31 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = LoginDestination
+        startDestination = SessionDestination
     ) {
+        composable<SessionDestination> {
+            SessionScreen(
+                onLoggedIn = {
+                    navController.navigate(HomeDestination) {
+                        popUpTo<SessionDestination> {
+                            inclusive = true
+                        }
+
+                        launchSingleTop = true
+                    }
+                },
+                onNotLoggedIn = {
+                    navController.navigate(LoginDestination) {
+                        popUpTo<SessionDestination> {
+                            inclusive = true
+                        }
+
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
         composable<LoginDestination> {
             LoginScreen(
                 onStartClick = {
@@ -22,6 +46,8 @@ fun AppNavigation() {
                         popUpTo<LoginDestination> {
                             inclusive = true
                         }
+
+                        launchSingleTop = true
                     }
                 }
             )
