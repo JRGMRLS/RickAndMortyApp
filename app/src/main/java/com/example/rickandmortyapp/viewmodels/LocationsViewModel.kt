@@ -1,9 +1,11 @@
 package com.example.rickandmortyapp.viewmodels
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rickandmortyapp.Location
-import com.example.rickandmortyapp.LocationDb
+import com.example.rickandmortyapp.data.local.database.AppDatabase
+import com.example.rickandmortyapp.data.repository.LocationRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,9 +19,15 @@ data class LocationsUiState(
     val hasError: Boolean = false
 )
 
-class LocationsViewModel : ViewModel() {
+class LocationsViewModel(
+    application: Application
+) : AndroidViewModel(application) {
 
-    private val locationDb = LocationDb()
+    private val database =
+        AppDatabase.getDatabase(application.applicationContext)
+
+    private val repository =
+        LocationRepository(database.locationDao())
 
     private val _uiState = MutableStateFlow(
         LocationsUiState()
@@ -28,33 +36,37 @@ class LocationsViewModel : ViewModel() {
     val uiState: StateFlow<LocationsUiState> =
         _uiState.asStateFlow()
 
-    private var loadingJob: Job? = null
+    private var locationsJob: Job? = null
 
     init {
         loadLocations()
     }
 
     fun loadLocations() {
-        loadingJob?.cancel()
+        locationsJob?.cancel()
 
         _uiState.value = LocationsUiState(
             isLoading = true
         )
 
-        loadingJob = viewModelScope.launch {
+        locationsJob = viewModelScope.launch {
             delay(4000)
 
-            _uiState.value = LocationsUiState(
-                isLoading = false,
-                data = locationDb.getAllLocations(),
-                hasError = false
-            )
+            repository
+                .getAllLocations()
+                .collect { locations ->
+                    _uiState.value = LocationsUiState(
+                        isLoading = false,
+                        data = locations,
+                        hasError = false
+                    )
+                }
         }
     }
 
     fun showError() {
         if (_uiState.value.isLoading) {
-            loadingJob?.cancel()
+            locationsJob?.cancel()
 
             _uiState.value = _uiState.value.copy(
                 isLoading = false,

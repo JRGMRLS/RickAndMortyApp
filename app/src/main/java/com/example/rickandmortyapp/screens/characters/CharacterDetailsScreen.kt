@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -45,6 +47,7 @@ fun CharacterDetailsScreen(
     characterDetailsViewModel: CharacterDetailsViewModel = viewModel()
 ) {
     val uiState by characterDetailsViewModel.uiState.collectAsState()
+    val character = uiState.data
 
     Scaffold(
         topBar = {
@@ -61,10 +64,35 @@ fun CharacterDetailsScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            characterDetailsViewModel.toggleFavorite()
+                        },
+                        enabled = character != null
+                    ) {
+                        Icon(
+                            imageVector =
+                                if (character?.isFavorite == true) {
+                                    Icons.Default.Favorite
+                                } else {
+                                    Icons.Default.FavoriteBorder
+                                },
+                            contentDescription =
+                                if (character?.isFavorite == true) {
+                                    "Quitar de favoritos"
+                                } else {
+                                    "Agregar a favoritos"
+                                }
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                     navigationIconContentColor =
+                        MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor =
                         MaterialTheme.colorScheme.onPrimary
                 )
             )
@@ -93,9 +121,9 @@ fun CharacterDetailsScreen(
                     )
                 }
 
-                uiState.data != null -> {
+                character != null -> {
                     CharacterDetailsContent(
-                        character = uiState.data!!
+                        character = character
                     )
                 }
             }
@@ -152,6 +180,16 @@ private fun CharacterDetailsContent(
         CharacterInformationRow(
             label = "Gender:",
             value = character.gender
+        )
+
+        CharacterInformationRow(
+            label = "Favorite:",
+            value =
+                if (character.isFavorite) {
+                    "Yes"
+                } else {
+                    "No"
+                }
         )
     }
 }

@@ -2,6 +2,7 @@ package com.example.rickandmortyapp.screens.characters
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,9 +17,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -32,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
@@ -52,11 +59,43 @@ fun CharactersScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = "Characters")
+                    Text(
+                        text =
+                            if (uiState.showFavoritesOnly) {
+                                "Favorite characters"
+                            } else {
+                                "Characters"
+                            }
+                    )
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            charactersViewModel.toggleFavoritesFilter()
+                        },
+                        enabled = !uiState.isLoading
+                    ) {
+                        Icon(
+                            imageVector =
+                                if (uiState.showFavoritesOnly) {
+                                    Icons.Default.Favorite
+                                } else {
+                                    Icons.Default.FavoriteBorder
+                                },
+                            contentDescription =
+                                if (uiState.showFavoritesOnly) {
+                                    "Mostrar todos"
+                                } else {
+                                    "Mostrar favoritos"
+                                }
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor =
+                        MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -84,6 +123,11 @@ fun CharactersScreen(
                     )
                 }
 
+                uiState.showFavoritesOnly &&
+                        uiState.data.isEmpty() -> {
+                    EmptyFavoritesScreen()
+                }
+
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -91,7 +135,8 @@ fun CharactersScreen(
                             horizontal = 12.dp,
                             vertical = 10.dp
                         ),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement =
+                            Arrangement.spacedBy(10.dp)
                     ) {
                         items(
                             items = uiState.data,
@@ -103,6 +148,11 @@ fun CharactersScreen(
                                 character = character,
                                 onClick = {
                                     onCharacterClick(character.id)
+                                },
+                                onFavoriteClick = {
+                                    charactersViewModel.toggleFavorite(
+                                        character
+                                    )
                                 }
                             )
                         }
@@ -116,7 +166,8 @@ fun CharactersScreen(
 @Composable
 private fun CharacterItem(
     character: Character,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onFavoriteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -158,7 +209,8 @@ private fun CharacterItem(
                 Text(
                     text = "${character.species} - ${character.status}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color =
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(3.dp))
@@ -166,9 +218,52 @@ private fun CharacterItem(
                 Text(
                     text = "Gender: ${character.gender}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color =
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            IconButton(
+                onClick = onFavoriteClick
+            ) {
+                Icon(
+                    imageVector =
+                        if (character.isFavorite) {
+                            Icons.Default.Favorite
+                        } else {
+                            Icons.Default.FavoriteBorder
+                        },
+                    contentDescription =
+                        if (character.isFavorite) {
+                            "Quitar de favoritos"
+                        } else {
+                            "Agregar a favoritos"
+                        },
+                    tint =
+                        if (character.isFavorite) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyFavoritesScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "No hay elementos para mostrar",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
     }
 }

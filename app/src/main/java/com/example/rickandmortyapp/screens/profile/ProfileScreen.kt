@@ -91,9 +91,18 @@ fun ProfileScreen(
                         onSuccess = onLogoutClick
                     )
                 },
+                enabled = !uiState.isLoggingOut,
                 modifier = Modifier.fillMaxWidth(0.65f)
             ) {
-                Text(text = "Cerrar sesión")
+                if (uiState.isLoggingOut) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = "Cerrar sesión")
+                }
             }
         }
     }

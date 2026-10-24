@@ -1,9 +1,11 @@
 package com.example.rickandmortyapp.viewmodels
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rickandmortyapp.Character
-import com.example.rickandmortyapp.CharacterDb
+import com.example.rickandmortyapp.data.local.database.AppDatabase
+import com.example.rickandmortyapp.data.repository.CharacterRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,12 +16,19 @@ import kotlinx.coroutines.launch
 data class CharactersUiState(
     val isLoading: Boolean = true,
     val data: List<Character> = emptyList(),
-    val hasError: Boolean = false
+    val hasError: Boolean = false,
+    val showFavoritesOnly: Boolean = false
 )
 
-class CharactersViewModel : ViewModel() {
+class CharactersViewModel(
+    application: Application
+) : AndroidViewModel(application) {
 
-    private val characterDb = CharacterDb()
+    private val database =
+        AppDatabase.getDatabase(application.applicationContext)
+
+    private val repository =
+        CharacterRepository(database.characterDao())
 
     private val _uiState = MutableStateFlow(
         CharactersUiState()
@@ -28,33 +37,76 @@ class CharactersViewModel : ViewModel() {
     val uiState: StateFlow<CharactersUiState> =
         _uiState.asStateFlow()
 
-    private var loadingJob: Job? = null
+    private var charactersJob: Job? = null
 
     init {
         loadCharacters()
     }
 
     fun loadCharacters() {
-        loadingJob?.cancel()
+        observeCharacters(
+            showLoading = true
+        )
+    }
 
-        _uiState.value = CharactersUiState(
-            isLoading = true
+    private fun observeCharacters(
+        showLoading: Boolean
+    ) {
+        charactersJob?.cancel()
+
+        _uiState.value = _uiState.value.copy(
+            isLoading = showLoading,
+            data = emptyList(),
+            hasError = false
         )
 
-        loadingJob = viewModelScope.launch {
-            delay(4000)
+        charactersJob = viewModelScope.launch {
+            if (showLoading) {
+                delay(4000)
+            }
 
-            _uiState.value = CharactersUiState(
-                isLoading = false,
-                data = characterDb.getAllCharacters(),
-                hasError = false
+            val charactersFlow =
+                if (_uiState.value.showFavoritesOnly) {
+                    repository.getFavoriteCharacters()
+                } else {
+                    repository.getAllCharacters()
+                }
+
+            charactersFlow.collect { characters ->
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    data = characters,
+                    hasError = false
+                )
+            }
+        }
+    }
+
+    fun toggleFavoritesFilter() {
+        _uiState.value = _uiState.value.copy(
+            showFavoritesOnly =
+                !_uiState.value.showFavoritesOnly
+        )
+
+        observeCharacters(
+            showLoading = false
+        )
+    }
+
+    fun toggleFavorite(
+        character: Character
+    ) {
+        viewModelScope.launch {
+            repository.updateFavorite(
+                id = character.id,
+                isFavorite = !character.isFavorite
             )
         }
     }
 
     fun showError() {
         if (_uiState.value.isLoading) {
-            loadingJob?.cancel()
+            charactersJob?.cancel()
 
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
