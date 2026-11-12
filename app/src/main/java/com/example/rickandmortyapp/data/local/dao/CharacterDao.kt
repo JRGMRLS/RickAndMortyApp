@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.example.rickandmortyapp.data.local.entity.CharacterEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -15,10 +16,39 @@ interface CharacterDao {
         characters: List<CharacterEntity>
     )
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(
+        character: CharacterEntity
+    )
+
+    @Update
+    suspend fun update(
+        character: CharacterEntity
+    )
+
+    @Query("DELETE FROM characters WHERE id = :id")
+    suspend fun deleteById(
+        id: Int
+    )
+
+    @Query(
+        """
+        SELECT COALESCE(MAX(id), 0) + 1
+        FROM characters
+        """
+    )
+    suspend fun getNextId(): Int
+
     @Query("SELECT * FROM characters ORDER BY id")
     fun getAllCharacters(): Flow<List<CharacterEntity>>
 
-    @Query("SELECT * FROM characters WHERE isFavorite = 1 ORDER BY id")
+    @Query(
+        """
+        SELECT * FROM characters
+        WHERE isFavorite = 1
+        ORDER BY id
+        """
+    )
     fun getFavoriteCharacters(): Flow<List<CharacterEntity>>
 
     @Query("SELECT * FROM characters WHERE id = :id LIMIT 1")

@@ -4,7 +4,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import androidx.navigation.toRoute
 import com.example.rickandmortyapp.screens.characters.CharacterDetailsScreen
+import com.example.rickandmortyapp.screens.characters.CharacterFormScreen
 import com.example.rickandmortyapp.screens.characters.CharactersScreen
 
 fun NavGraphBuilder.charactersNavigation(
@@ -21,13 +23,43 @@ fun NavGraphBuilder.charactersNavigation(
                             id = characterId
                         )
                     )
+                },
+                onAddCharacterClick = {
+                    navController.navigate(
+                        CharacterFormDestination()
+                    )
                 }
             )
         }
 
-        composable<CharacterDetailsDestination> {
+        composable<CharacterDetailsDestination> { backStackEntry ->
+            val destination =
+                backStackEntry
+                    .toRoute<CharacterDetailsDestination>()
+
             CharacterDetailsScreen(
                 onBackClick = {
+                    navController.popBackStack()
+                },
+                onEditClick = {
+                    navController.navigate(
+                        CharacterFormDestination(
+                            id = destination.id
+                        )
+                    )
+                },
+                onDeleted = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable<CharacterFormDestination> {
+            CharacterFormScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onSaved = {
                     navController.popBackStack()
                 }
             )

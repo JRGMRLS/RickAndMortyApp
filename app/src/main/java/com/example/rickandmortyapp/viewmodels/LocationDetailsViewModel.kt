@@ -73,6 +73,17 @@ class LocationDetailsViewModel(
         }
     }
 
+    fun toggleFavorite() {
+        val location = _uiState.value.data ?: return
+
+        viewModelScope.launch {
+            repository.updateFavorite(
+                id = location.id,
+                isFavorite = !location.isFavorite
+            )
+        }
+    }
+
     fun showError() {
         if (_uiState.value.isLoading) {
             locationJob?.cancel()

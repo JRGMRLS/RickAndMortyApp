@@ -46,11 +46,14 @@ import com.example.rickandmortyapp.Character
 import com.example.rickandmortyapp.screens.components.ErrorScreen
 import com.example.rickandmortyapp.screens.components.LoadingScreen
 import com.example.rickandmortyapp.viewmodels.CharactersViewModel
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.FloatingActionButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharactersScreen(
     onCharacterClick: (Int) -> Unit,
+    onAddCharacterClick: () -> Unit,
     charactersViewModel: CharactersViewModel = viewModel()
 ) {
     val uiState by charactersViewModel.uiState.collectAsState()
@@ -98,7 +101,18 @@ fun CharactersScreen(
                         MaterialTheme.colorScheme.onPrimary
                 )
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddCharacterClick
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Crear personaje"
+                )
+            }
         }
+
     ) { innerPadding ->
         Column(
             modifier = Modifier

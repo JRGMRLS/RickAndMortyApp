@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rickandmortyapp.R
 import com.example.rickandmortyapp.viewmodels.LoginViewModel
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun LoginScreen(
@@ -98,6 +99,15 @@ fun LoginScreen(
             } else {
                 Text(text = "Iniciar sesión")
             }
+        }
+        uiState.errorMessage?.let { message ->
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center
+            )
         }
 
         Spacer(modifier = Modifier.weight(1f))

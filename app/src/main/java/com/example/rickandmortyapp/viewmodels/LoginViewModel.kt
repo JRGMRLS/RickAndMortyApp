@@ -6,15 +6,18 @@ import androidx.lifecycle.viewModelScope
 import com.example.rickandmortyapp.data.local.database.AppDatabase
 import com.example.rickandmortyapp.data.preferences.UserPreferences
 import com.example.rickandmortyapp.data.repository.SyncRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.util.Log
 
 data class LoginUiState(
     val name: String = "",
     val isSaving: Boolean = false,
-    val hasError: Boolean = false
+    val hasError: Boolean = false,
+    val errorMessage: String? = null
 )
 
 class LoginViewModel(
@@ -40,7 +43,8 @@ class LoginViewModel(
     fun onNameChange(name: String) {
         _uiState.value = _uiState.value.copy(
             name = name,
-            hasError = false
+            hasError = false,
+            errorMessage = null
         )
     }
 
@@ -51,7 +55,8 @@ class LoginViewModel(
 
         if (name.isBlank()) {
             _uiState.value = _uiState.value.copy(
-                hasError = true
+                hasError = true,
+                errorMessage = null
             )
             return
         }
@@ -63,19 +68,37 @@ class LoginViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isSaving = true,
-                hasError = false
+                hasError = false,
+                errorMessage = null
             )
 
-            syncRepository.synchronizeInitialData()
+            try {
+                syncRepository.synchronizeInitialData()
 
-            userPreferences.saveName(name)
+                userPreferences.saveName(name)
 
-            _uiState.value = _uiState.value.copy(
-                name = name,
-                isSaving = false
-            )
+                _uiState.value = _uiState.value.copy(
+                    name = name,
+                    isSaving = false
+                )
 
-            onSuccess()
+                onSuccess()
+            } catch (exception: CancellationException) {
+                throw exception
+
+            } catch (exception: Exception) {
+                Log.e(
+                    "LoginViewModel",
+                    "Error durante la sincronización",
+                    exception
+                )
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    errorMessage =
+                        "No se pudieron descargar los datos. " +
+                                "Revisa tu conexión e intenta nuevamente."
+                )
+            }
         }
     }
 }

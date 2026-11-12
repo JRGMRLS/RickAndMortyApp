@@ -13,10 +13,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+enum class LocationFilter {
+    ALL,
+    FAVORITES,
+    NON_FAVORITES
+}
+
 data class LocationsUiState(
     val isLoading: Boolean = true,
     val data: List<Location> = emptyList(),
-    val hasError: Boolean = false
+    val hasError: Boolean = false,
+    val filter: LocationFilter = LocationFilter.ALL
 )
 
 class LocationsViewModel(
@@ -43,24 +50,73 @@ class LocationsViewModel(
     }
 
     fun loadLocations() {
+        observeLocations(
+            showLoading = true
+        )
+    }
+
+    private fun observeLocations(
+        showLoading: Boolean
+    ) {
         locationsJob?.cancel()
 
-        _uiState.value = LocationsUiState(
-            isLoading = true
+        _uiState.value = _uiState.value.copy(
+            isLoading = showLoading,
+            data = emptyList(),
+            hasError = false
         )
 
         locationsJob = viewModelScope.launch {
-            delay(4000)
+            if (showLoading) {
+                delay(4000)
+            }
 
-            repository
-                .getAllLocations()
-                .collect { locations ->
-                    _uiState.value = LocationsUiState(
-                        isLoading = false,
-                        data = locations,
-                        hasError = false
-                    )
+            val locationsFlow =
+                when (_uiState.value.filter) {
+                    LocationFilter.ALL ->
+                        repository.getAllLocations()
+
+                    LocationFilter.FAVORITES ->
+                        repository.getFavoriteLocations()
+
+                    LocationFilter.NON_FAVORITES ->
+                        repository.getNonFavoriteLocations()
                 }
+
+            locationsFlow.collect { locations ->
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    data = locations,
+                    hasError = false
+                )
+            }
+        }
+    }
+
+    fun setFilter(
+        filter: LocationFilter
+    ) {
+        if (_uiState.value.filter == filter) {
+            return
+        }
+
+        _uiState.value = _uiState.value.copy(
+            filter = filter
+        )
+
+        observeLocations(
+            showLoading = false
+        )
+    }
+
+    fun toggleFavorite(
+        location: Location
+    ) {
+        viewModelScope.launch {
+            repository.updateFavorite(
+                id = location.id,
+                isFavorite = !location.isFavorite
+            )
         }
     }
 

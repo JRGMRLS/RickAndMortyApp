@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -40,6 +42,7 @@ fun LocationDetailsScreen(
     locationDetailsViewModel: LocationDetailsViewModel = viewModel()
 ) {
     val uiState by locationDetailsViewModel.uiState.collectAsState()
+    val location = uiState.data
 
     Scaffold(
         topBar = {
@@ -48,7 +51,9 @@ fun LocationDetailsScreen(
                     Text(text = "Location details")
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(
+                        onClick = onBackClick
+                    ) {
                         Icon(
                             imageVector =
                                 Icons.AutoMirrored.Filled.ArrowBack,
@@ -56,10 +61,38 @@ fun LocationDetailsScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            locationDetailsViewModel
+                                .toggleFavorite()
+                        },
+                        enabled = location != null
+                    ) {
+                        Icon(
+                            imageVector =
+                                if (location?.isFavorite == true) {
+                                    Icons.Default.Favorite
+                                } else {
+                                    Icons.Default.FavoriteBorder
+                                },
+                            contentDescription =
+                                if (location?.isFavorite == true) {
+                                    "Quitar de favoritas"
+                                } else {
+                                    "Agregar a favoritas"
+                                }
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor =
+                        MaterialTheme.colorScheme.primary,
+                    titleContentColor =
+                        MaterialTheme.colorScheme.onPrimary,
                     navigationIconContentColor =
+                        MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor =
                         MaterialTheme.colorScheme.onPrimary
                 )
             )
@@ -73,7 +106,9 @@ fun LocationDetailsScreen(
             when {
                 uiState.hasError -> {
                     ErrorScreen(
-                        message = "Error al obtener la ubicación.\nIntenta de nuevo",
+                        message =
+                            "Error al obtener la ubicación.\n" +
+                                    "Intenta de nuevo",
                         onRetryClick = {
                             locationDetailsViewModel.loadLocation()
                         }
@@ -88,9 +123,9 @@ fun LocationDetailsScreen(
                     )
                 }
 
-                uiState.data != null -> {
+                location != null -> {
                     LocationDetailsContent(
-                        location = uiState.data!!
+                        location = location
                     )
                 }
             }
@@ -105,7 +140,10 @@ private fun LocationDetailsContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 28.dp, vertical = 30.dp),
+            .padding(
+                horizontal = 28.dp,
+                vertical = 30.dp
+            ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -141,6 +179,16 @@ private fun LocationDetailsContent(
         LocationInformationRow(
             label = "Dimension:",
             value = location.dimension
+        )
+
+        LocationInformationRow(
+            label = "Favorite:",
+            value =
+                if (location.isFavorite) {
+                    "Yes"
+                } else {
+                    "No"
+                }
         )
     }
 }

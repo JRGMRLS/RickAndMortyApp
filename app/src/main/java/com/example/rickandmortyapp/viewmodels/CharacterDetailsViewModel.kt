@@ -19,7 +19,8 @@ import kotlinx.coroutines.launch
 data class CharacterDetailsUiState(
     val isLoading: Boolean = true,
     val data: Character? = null,
-    val hasError: Boolean = false
+    val hasError: Boolean = false,
+    val isDeleting: Boolean = false
 )
 
 class CharacterDetailsViewModel(
@@ -83,7 +84,25 @@ class CharacterDetailsViewModel(
             )
         }
     }
+    fun deleteCharacter(
+        onSuccess: () -> Unit
+    ) {
+        val character = _uiState.value.data ?: return
 
+        if (_uiState.value.isDeleting) {
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isDeleting = true
+            )
+
+            repository.deleteCharacter(character.id)
+
+            onSuccess()
+        }
+    }
     fun showError() {
         if (_uiState.value.isLoading) {
             characterJob?.cancel()

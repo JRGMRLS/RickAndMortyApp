@@ -19,6 +19,26 @@ class LocationRepository(
             }
     }
 
+    fun getFavoriteLocations(): Flow<List<Location>> {
+        return locationDao
+            .getFavoriteLocations()
+            .map { entities ->
+                entities.map { entity ->
+                    entity.toModel()
+                }
+            }
+    }
+
+    fun getNonFavoriteLocations(): Flow<List<Location>> {
+        return locationDao
+            .getNonFavoriteLocations()
+            .map { entities ->
+                entities.map { entity ->
+                    entity.toModel()
+                }
+            }
+    }
+
     fun getLocationById(
         id: Int
     ): Flow<Location?> {
@@ -27,5 +47,15 @@ class LocationRepository(
             .map { entity ->
                 entity?.toModel()
             }
+    }
+
+    suspend fun updateFavorite(
+        id: Int,
+        isFavorite: Boolean
+    ) {
+        locationDao.updateFavorite(
+            id = id,
+            isFavorite = isFavorite
+        )
     }
 }

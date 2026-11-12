@@ -18,10 +18,40 @@ interface LocationDao {
     @Query("SELECT * FROM locations ORDER BY id")
     fun getAllLocations(): Flow<List<LocationEntity>>
 
+    @Query(
+        """
+        SELECT * FROM locations
+        WHERE isFavorite = 1
+        ORDER BY id
+        """
+    )
+    fun getFavoriteLocations(): Flow<List<LocationEntity>>
+
+    @Query(
+        """
+        SELECT * FROM locations
+        WHERE isFavorite = 0
+        ORDER BY id
+        """
+    )
+    fun getNonFavoriteLocations(): Flow<List<LocationEntity>>
+
     @Query("SELECT * FROM locations WHERE id = :id LIMIT 1")
     fun getLocationById(
         id: Int
     ): Flow<LocationEntity?>
+
+    @Query(
+        """
+        UPDATE locations
+        SET isFavorite = :isFavorite
+        WHERE id = :id
+        """
+    )
+    suspend fun updateFavorite(
+        id: Int,
+        isFavorite: Boolean
+    )
 
     @Query("SELECT COUNT(*) FROM locations")
     suspend fun getLocationCount(): Int

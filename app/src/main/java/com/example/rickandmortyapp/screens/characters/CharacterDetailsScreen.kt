@@ -39,15 +39,27 @@ import com.example.rickandmortyapp.Character
 import com.example.rickandmortyapp.screens.components.ErrorScreen
 import com.example.rickandmortyapp.screens.components.LoadingScreen
 import com.example.rickandmortyapp.viewmodels.CharacterDetailsViewModel
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterDetailsScreen(
     onBackClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleted: () -> Unit,
     characterDetailsViewModel: CharacterDetailsViewModel = viewModel()
 ) {
     val uiState by characterDetailsViewModel.uiState.collectAsState()
     val character = uiState.data
+    var showDeleteDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     Scaffold(
         topBar = {
@@ -65,6 +77,28 @@ fun CharacterDetailsScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = onEditClick,
+                        enabled = character != null
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar personaje"
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            showDeleteDialog = true
+                        },
+                        enabled =
+                            character != null &&
+                                    !uiState.isDeleting
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar personaje"
+                        )
+                    }
                     IconButton(
                         onClick = {
                             characterDetailsViewModel.toggleFavorite()
@@ -128,6 +162,45 @@ fun CharacterDetailsScreen(
                 }
             }
         }
+    }
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteDialog = false
+            },
+            title = {
+                Text(text = "Eliminar personaje")
+            },
+            text = {
+                Text(
+                    text =
+                        "¿Estás seguro de que deseas eliminar " +
+                                "${character?.name}?"
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+
+                        characterDetailsViewModel.deleteCharacter(
+                            onSuccess = onDeleted
+                        )
+                    }
+                ) {
+                    Text(text = "Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text(text = "Cancelar")
+                }
+            }
+        )
     }
 }
 
